@@ -181,7 +181,7 @@ def PrintWaypoints():
 
 
 if __name__ == "__main__":
-    sys.argv.append('sample_input_small.txt')
+    sys.argv.append('sample_input_medium.txt')
     #Check for file argument
     if(len(sys.argv) < 2):
         print "Please specify input file."
@@ -195,9 +195,3 @@ if __name__ == "__main__":
         print minPathTime
         minPathTime = 999999
 
-filePtr = open('sample_input_small.txt', 'r')
-waypoints = ParseMap(filePtr)
-
-r = Robot(waypoints)
-r.AppendEndPoint()
-FillDelayMatrix()
