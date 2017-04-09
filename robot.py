@@ -26,16 +26,15 @@ class Robot:
     #Finds the hypotnuse of newX and newY
     def CalculateTime(self, newX, newY):
         global robotSpeed
-        return math.sqrt(((newX**2 + newY**2))) * robotSpeed
+        return math.sqrt(((newX**2 + newY**2))) * float(robotSpeed)
 
     #This function takes in a waypoint index for the
     # robot to traverse to and returns the total time required
     # for the robot to get there (plus penalty)
     def GetWaypointTravelTime(self, waypointIndex):
         #Find the time required to travel to new X,Y location
-        timeReq = self.CalculateTime(self.Loc[0] - self.availWP[waypointIndex][0], self.Loc[1] - self.availWP[waypointIndex][1])
-                    
-        return timeReq
+        return self.CalculateTime(self.Loc[0] - self.availWP[waypointIndex][0], self.Loc[1] - self.availWP[waypointIndex][1])
+
 
     def GetWaypointPenaltyTime(self, waypointIndex):
         penaltyTime = 0
@@ -85,25 +84,22 @@ def ParseMap(filePtr):
     penaltyMatrix = [-1 for x in range(len(waypoints)+1)]
     return waypoints
 
-#if __name__ == "__main__":
-    #Check for file argument
-#    if(len(sys.argv) < 2):
-#        print "Please specify input file."
-#        exit();
-#    filePtr = open(sys.argv[1])
-#    waypoints = ParseMap(filePtr)
-
 
 def FillDelayMatrix():
     global delayMatrix, penaltyMatrix, endPosition
     robot1 = Robot(waypoints)
-    robot1.availWP.append((endPosition[0], endPosition[1],0))
-    robot1.waypoints.append((endPosition[0], endPosition[1],0))
+    robot1.AppendEndPoint()
     for i in range(len(robot1.waypoints)):
         for j in range(i, len(robot1.waypoints)):
-            delayMatrix[i][j] = robot1.GetWaypointTravelTime(j-i)
+            delayMatrix[i][j] = robot1.GetWaypointTravelTime(j-i) + waypointDelay
+            if(j+1 == len(robot1.waypoints)):
+                delayMatrix[i][j] -= waypointDelay
         penaltyMatrix[i] = robot1.availWP[0][2]
         robot1.TravelToWaypointIndex(0)
+    #Implement penalty into delay matrix
+    for i in range(len(robot1.waypoints)):
+        for j in range(i, len(robot1.waypoints)):
+            delayMatrix[i][j] += sum(penaltyMatrix[i:j])
         
 
 def pm(m):
@@ -138,6 +134,7 @@ def GeneratePaths(robot):
             except:
                 print "Failed to make a new robot in recursive call! Waypoint: {}".format(wp)
                 print "Index: {}".format(index)
+                exit()
                 return None
             newRobot.TravelToWaypointIndex(wp)
             #Recursive call: GeneratePaths(newRobot)
@@ -159,14 +156,19 @@ def GeneratePaths(robot):
     return (index, finishTime)
 
 
-def DijkstraPath():
-    global waypoints
-    robot1 = Robot(waypoints)
-    for i in range(len(waypoints)):
-        robot1.TravelToWaypointIndex(0)
-    robot1.TravelToEndPoint()
-    print robot1.timer
-    
+def depthFirst(timer = 0, depth = 0):
+    global delayMatrix, minPathTime, times, waypointDelay
+    for col in range(depth, len(delayMatrix)):
+        #endOfPath = False
+        if(timer + delayMatrix[depth][col] < minPathTime):
+            t, endOfPath = depthFirst(timer + delayMatrix[depth][col], depth+1)
+            if(t < minPathTime and endOfPath):
+                minPathTime = t
+                
+    if(depth == len(delayMatrix)):
+        return timer, True
+    else:
+        return timer, False
 
 
 def PrintWaypoints():
@@ -177,11 +179,25 @@ def PrintWaypoints():
         print "{}\t{}\t{}\t{}".format(index+1,waypoint[0],waypoint[1],waypoint[2])
         
 
-#####Debuging 
-filePtr = open('sample_input_large.txt', 'r')
+
+if __name__ == "__main__":
+    sys.argv.append('sample_input_small.txt')
+    #Check for file argument
+    if(len(sys.argv) < 2):
+        print "Please specify input file."
+        exit();
+    filePtr = open(sys.argv[1])
+    waypoints = ParseMap(filePtr)
+    while(waypoints != []):
+        waypoints = ParseMap(filePtr)
+        FillDelayMatrix()
+        depthFirst()
+        print minPathTime
+        minPathTime = 999999
+
+filePtr = open('sample_input_small.txt', 'r')
 waypoints = ParseMap(filePtr)
-waypoints = ParseMap(filePtr)
-availWP = waypoints[:]
 
 r = Robot(waypoints)
 r.AppendEndPoint()
+FillDelayMatrix()
