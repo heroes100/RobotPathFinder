@@ -1,0 +1,3 @@
+The script takes in a file input of waypoint(s) within a 100x100 grid that each have a (x,y) locations, and a 'penalty' 
+associated for skipping it. The script will recursivley find the fastest path between (0,0) to (100,100) with any appropriate waypoints
+and print out the minimum total time required for the robot to traverse.
